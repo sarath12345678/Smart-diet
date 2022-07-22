@@ -1,0 +1,76 @@
+from forms import UserInfoForm
+from flask import Flask, render_template, flash, request,url_for,redirect
+import algo
+app=Flask(__name__)
+app.config.from_object(__name__)
+app.config['SECRET_KEY'] = '945a61eeffcee883e3b261a47b31ae47'
+
+@app.route('/',methods=['GET','POST'])
+@app.route('/home',methods=['GET','POST'])
+
+
+def home():
+	form=UserInfoForm()
+	if form.validate_on_submit():
+		if request.method=='POST':
+			name=request.form['name']
+			weight=float(request.form['weight'])
+			height=float(request.form['height'])
+			age=int(request.form['age'])
+			gender=request.form['gender']
+			phys_act=request.form['physical_activity']
+			von=request.form['von']
+			chol=request.form['chol']
+			dia=request.form['dia']
+			tdee=algo.calc_tdee(name,weight,height,age,gender,phys_act);bmi,i=algo.calc_bmi(weight,height);
+			return redirect(url_for('result',tdee=tdee,bmi=bmi,i=i,name=name,age=age,gender=gender,phys_act=phys_act,von=von,chol=chol,dia=dia))
+
+	return render_template('home.html',title="Diet App",form=form)
+
+
+@app.route('/fitness')
+def fitness():
+    return render_template('fitness.html', title='Fitness')
+
+@app.route('/health')
+def fitness():
+    return render_template('health.html', title='Health')
+
+@app.route('/about')
+def fitness():
+    return render_template('about.html', title='About')
+
+@app.route('/result',methods=['GET','POST'])
+def result():
+	tdee=request.args.get('tdee');bmi=request.args.get('bmi');i=request.args.get('i');
+	name=request.args.get('name')
+	age=request.args.get('age')
+	gender=request.args.get('gender')
+	phy=request.args.get('phys_act')
+	von=request.args.get('von')
+	chol=request.args.get('chol')
+	dia=request.args.get('dia')
+	if tdee is None:
+		return render_template('error.html',title="Error Page")
+	
+	tdee=float(tdee)
+	breakfast= algo.bfcalc(tdee,von,chol,dia)
+	snack1=algo.s1calc(tdee)
+	lunch=algo.lcalc(tdee,von,chol,dia)
+	snack2=algo.s2calc(tdee)
+	dinner=algo.dcalc(tdee,von,chol)
+	snack3=algo.s3calc(tdee,dia);bmc=bmi;
+	if i=='0':
+		strd='Ideal Weight'
+	else:
+		if i=='1':
+			strd='Over Weight'
+		else :
+			strd='Under Weight'
+
+
+	    
+	return render_template('result.html',title="Result",breakfast=breakfast,snack1=snack1,lunch=lunch,snack2=snack2,dinner=dinner,snack3=snack3,bmc=bmc,strd=strd,name=name,age=age,gender=gender,phy=phy)
+
+if __name__ == '__main__':
+    app.run(debug=True)
